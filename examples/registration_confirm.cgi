@@ -14,16 +14,19 @@ my @form = (
 	    {
 	      templ => 'select',
 	      NAME => 'Salutation',
-	      OPTION => ['mr.','mrs.'],
+	      OPTION => [[['mr.','mrs.']]],
+	      #OPTION => ['mr.','mrs.'],
+              #OPTION => ['mr.'],
 	    },
 	    {
 	      templ => 'hidden',
+	      ##NAME => "test",
 	      VALUE => 'test',
 	    },
 	    {
 	     SIZE => 10,
 	     MAXLEN => 20,
-	     SUBTITLE => [['', '&nbsp;/&nbsp;']],
+	     PREFIX => [['&nbsp; ', '&nbsp;/&nbsp;']],
 	     NAME => [['forname', 'surname']],
 	     TITLE => 'For- / Surname ',
              ERROR_IN => 'not_null'

@@ -23,3 +23,9 @@ msgstr "Sind Sie wirklich sicher, dass sie die folgenden Daten übertragen wollen
 
 msgid "Cancel"
 msgstr "Abbrechen"
+
+msgid "standard incompatible"
+msgstr "standard inkompatibel"
+
+msgid "not unique"
+msgstr "existiert bereits"

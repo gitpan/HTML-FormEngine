@@ -23,7 +23,7 @@ my @fbackform = (
       "NAME" => "Comment",
       "COLS" => 59,
       "ROWS" => 20,
-      "ERROR" => sub { if(length(shift) lt 40) { return 'to short!'; } } }
+      "ERROR" => sub { ($_) = @_; return (length($_) < 40) ? 'to short!' : ''; }}
 );
 
 my $msg = '';

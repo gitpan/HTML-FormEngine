@@ -9,5 +9,7 @@ WriteMakefile(
 		'Hash::Merge' => 0.07,
 		'Locale::gettext' => 1.01,
 		'Date::Pcalc' => 1.2,
+		'Digest::MD5' => 2.24,
+		'HTML::Entities' => 1.27,
 	},
 );
