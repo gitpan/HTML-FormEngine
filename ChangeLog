@@ -39,3 +39,9 @@ Till version 0.7 FormEngine was called gaff.
 	- added new check methods
 	- enhanced handler system
         - enhanced documentation
+
+0.7.3b
+------
+This is a CPAN release only. I forgot to delete the 'blib' directory before
+packaging the 0.7.3 release. CPAN doesn't like this.
+
