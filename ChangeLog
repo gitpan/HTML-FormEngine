@@ -1,0 +1,20 @@
+0.7
+---
+	
+Till version 0.6.1 gaff was an php tool. When i started programming perl
+and recognized that it is much more powerfull than php, i ported gaff to
+perl. I completly rewrote it and thereby added many new features:
+
+	- flexible template engine for writing skins
+	- check routines with translatable error messages (using gettext)
+	- a more modular design, so that gaff can easily be extended and
+	enhanced
+	- a more detailed documentation
+0.7.1
+-----
+
+Till version 0.7 FormEngine was called gaff.
+	
+	- new method add_checks
+	- enhanced documentation
+

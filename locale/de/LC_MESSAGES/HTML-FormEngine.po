@@ -1,0 +1,16 @@
+domain "HTML-FormEngine"
+
+msgid  "invalid"
+msgstr "ungültig"
+
+msgid  "value missing"
+msgstr "wert fehlt"
+
+msgid  "failure"
+msgstr "fehler"
+
+msgid  "Yes"
+msgstr "Ja"
+
+msgid  "No"
+msgstr "Nein"

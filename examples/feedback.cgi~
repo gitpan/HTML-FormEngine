@@ -1,0 +1,50 @@
+#!/usr/bin/perl -w
+
+use CGI;
+use HTML::gaff;
+use Mail::Mailer;
+
+my $q = new CGI;
+print $q->header;
+
+my @fbackform = (
+   { 
+      "templ" => "text",
+      "NAME" => "Name",
+      "ERROR" => 'not_null'},
+
+   {
+      "templ" => "text",
+      "NAME" => "Email",
+      "ERROR" => ['not_null', 'rfc822']},
+
+   {
+      "templ" => "textarea",
+      "NAME" => "Comment",
+      "COLS" => 59,
+      "ROWS" => 20,
+      "ERROR" => sub { if(length(shift) lt 40) { return 'to short!'; } } }
+);
+
+my $msg = '';
+my $gaff = new HTML::gaff(scalar $q->Vars);
+
+$gaff->conf(\@fbackform);
+$gaff->make;
+
+if($gaff->ok) {
+  $gaff->clear();
+  my $mailer = Mail::Mailer->new();
+  $mailer->open({ From    => '"gaff" <moritz@freesources.org>',
+		  To      => '"'.$gaff->get_input('Name').'" <'.$gaff->get_input('Email').'>',
+		  Subject => 'gaff example: Feedback'})
+      or die "Can't open: $!\n";
+  print $mailer "Your comment was:\n".$gaff->get_input('Comment');
+  $mailer->close();
+  $msg = "Thanks! A mail has been send!";
+}
+
+print $q->start_html('gaff example: Feedback'),
+      $gaff->get,
+      "<center><b>$msg</b></center>",
+      $q->end_html;

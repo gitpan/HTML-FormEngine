@@ -1,0 +1,36 @@
+FormEngine version 0.7.1
+========================
+
+FormEngine is a extensible perl module for managing html/xhtml forms. You
+can create, validate and control forms with FormEngine. The api is designed
+to make the job easy when only simple forms are needed, but it also supports 
+very complex tasks. You don't need any knowledge about html,
+but if you have, you can suit the form design very easy.
+FormEngine is known to work with CGI.pm and mod_perl, all it needs is a
+reference to an hash with the GET or POST data.
+Please see the POD for additional information.
+
+INSTALLATION
+
+To install this module, type:
+	perl Makefile.PL
+	make
+	make install
+
+If you need gettext support, copy the content of the locale directory
+to your systems locale directory. If this isn't /usr/share/locale,
+don't forget to adapt $textdomain in Config.pm!
+
+DEPENDENCIES
+
+- Clone 0.13 by Ray Finch
+- Hash::Merge 0.07 by Michael K. Neylon 
+- Locale::gettext 1.01 by Phillip Vandry
+- Date::Pcalc 1.2 by J. David Eisenberg and Steffen Beyer
+
+COPYRIGHT AND LICENCE
+
+(c) 2003 Moritz Sinn
+
+This module is free software.  You can redistribute it and/or modify it 
+under the same terms of the GNU GENERAL PUBLIC LICENSE (see COPYING).
