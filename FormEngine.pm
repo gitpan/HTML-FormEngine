@@ -15,7 +15,7 @@ require 5.004;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.7.3';
+$VERSION = '0.7.4';
 
 ######################################################################
 
@@ -1252,9 +1252,6 @@ sub _check_conf {
       $conf->{TEMPL} = $tmp->{TEMPL};
     }
   }
-  #else {
-  #  $conf = {};
-  #}
   return $conf;
 }
 
@@ -1271,11 +1268,13 @@ sub _get_var {
   my $notdelete = (shift||0);
   my $value = '';
   my $i;
+  #print STDERR $var, "T\n" if($var eq 'CONFIRMSG');
   for($i=@{$self->{varstack}} - 1; $i>=0; $i--) {
+    #print $i, "\n" if($var eq 'CONFIRMSG');
     if(defined($self->{varstack}->[$i]->{$var})) {
       $value = $self->{varstack}->[$i]->{$var};
       if(! $notdelete && ! defined($self->{varstack}->[$i]->{'persistent'})) {
-	delete $self->{varstack}->[$i]->{$var};
+	#delete $self->{varstack}->[$i]->{$var};
       }
       last;
     }
@@ -1299,192 +1298,194 @@ sub _set_var {
 sub _parse {
   # here the templates are parsed into one resulting form, due to the given configuration
   # this job is realized by calling _parse recursive
-  my $self = shift;
-  my $cont = shift;
+  my ($self,$cont) = @_;
   my $nconf_back = {};
-  my (%itvars, $itval, $max, $i);
+  my (%itvars, $itval, $max, $i, $y, $code);
   my ($handler, $templ, $args, $val, $tmp, @tmp, $body, $pupo,$res,@args);
   my ($cache,$default);
-  # parsing handler calls, we mustn't touch <~ ~> blocks
-  while($cont =~ m/^(?:(?:.*<~.*~>.*)*|(?:(?!.*<~.*).*))<&([a-z_]+)(?: (.*?))?&>/s) {
-  ##while($cont =~ m/^(?=.*<~.*~>.*).*|(?!.*<~.*).*<&([a-z_]+)(?: ((?:(?!<&|&>)..)*.?))?&>/s) {
-    $templ = $1;
-    $args = $2;
-    @args = ();
-    if($args) {
-      push @args, '' if($args =~ m/^,$/);
-      push @args, split(',',$args);
-      push @args, '' if($args =~ m/,$/);
-    }
-    $nconf_back = $self->{nconf};
-    
-    if(ref($self->{nconf}->{$templ}) eq 'ARRAY' && ref($self->{nconf}->{$templ}->[0]) eq 'HASH') {
-      # define new nconf
-      # in nconf we store the subtemplate definitions
-      if(ref($self->{nconf}->{$templ}->[0]->{sub}) eq 'HASH') {
-	# do a merge so that the previous definitions are still known (we append them)
-	$self->{nconf} = merge($self->{nconf}->{$templ}->[0]->{sub}, $self->{nconf});
-      }
-      
-      # soon we will store the definitions for the found subtemplate on the variable stack.
-      # sub isn't a variable, behind this key the subsubtemplate definitions are stored, these
-      # we allready extracted above.
-      # so we now delete this key to prevent it from being pushed on the variable stack.
-      if(defined($nconf_back->{$templ}->[0]->{sub})) {
-	delete $nconf_back->{$templ}->[0]->{sub};
-      }
-      
-      # using the default settings
-      if(ref($self->{default}->{default}) eq 'HASH' || ref($self->{default}->{$templ}) eq 'HASH') {
-	$cache = shift @{$nconf_back->{$templ}};
-	# go through
-	if(! (ref($self->{default}->{$templ}) eq 'HASH')) {
-	  $default = $self->{default}->{default};
+  my $p = my $old = my $match = '';
+  my $c = 0;
+  my %f;
+  for($i=0; $i<length($cont); $i++) {
+    $old = $p;
+    $p = substr($cont,$i,1);
+    $match .= $p if($c);
+    ($c == 0 ? ($c=$i) : 1) && ++$f{$p} && next if(grep {$p eq $_} ('&','~','!') and $old eq '<');
+    if($c > 0 and grep {$old eq $_} ('&','~','!') and $p eq '>') {
+      $f{$old}--; 
+      if(! (grep {$_ > 0} values(%f))) {
+	undef($res);
+	# replace variables with theire values
+	if($match =~ m/^(~)?([A-Z_]+)&>$/) {
+	  $res = $self->_parse($self->_get_var($2,$1));
+	  $res = '' unless(defined($res));
 	}
-	elsif(! (ref($self->{default}->{default}) eq 'HASH')) {
-	  $default = $self->{default}->{$templ};
-	}
-	else {
-	  $default = merge($self->{default}->{$templ},$self->{default}->{default});
-	}
-	foreach $_ (keys(%{$default})) {
-	  # set missing definitions
-	  if(! defined($cache->{$_}) && defined($default->{$_})){
-	    # special case: copy the definition of another variable
-	    if($default->{$_} =~ m/^<&([A-Z_]+)&>$/) {
-	      if(ref($cache->{$1}) eq 'ARRAY') {
-		$cache->{$_} = clone($cache->{$1});
+	# handler calls
+	elsif($match =~ m/^([a-z_]+)(?: (.*?))?&>$/) {
+	  $templ = $1;
+	  $args = $2;
+	  @args = ();
+	  if($args) {
+	    push @args, '' if($args =~ m/^,$/);
+	    push @args, split(',',$args);
+	    push @args, '' if($args =~ m/,$/);
+	  }
+	  $nconf_back = $self->{nconf};
+	  
+	  if(ref($self->{nconf}->{$templ}) eq 'ARRAY' && ref($self->{nconf}->{$templ}->[0]) eq 'HASH') {
+	    # define new nconf
+	    # in nconf we store the subtemplate definitions
+	    if(ref($self->{nconf}->{$templ}->[0]->{sub}) eq 'HASH') {
+	      # do a merge so that the previous definitions are still known (we append them)
+	      $self->{nconf} = merge($self->{nconf}->{$templ}->[0]->{sub}, $self->{nconf});
+	    }
+	    
+	    # soon we will store the definitions for the found subtemplate on the variable stack.
+	    # sub isn't a variable, behind this key the subsubtemplate definitions are stored, these
+	    # we allready extracted above.
+	    # so we now delete this key to prevent it from being pushed on the variable stack.
+	    if(defined($nconf_back->{$templ}->[0]->{sub})) {
+	      delete $nconf_back->{$templ}->[0]->{sub};
+	    }
+	    
+	    # using the default settings
+	    if(ref($self->{default}->{default}) eq 'HASH' || ref($self->{default}->{$templ}) eq 'HASH') {
+	      $cache = shift @{$nconf_back->{$templ}};
+	      # go through
+	      if(! (ref($self->{default}->{$templ}) eq 'HASH')) {
+		$default = $self->{default}->{default};
+	      }
+	      elsif(! (ref($self->{default}->{default}) eq 'HASH')) {
+		$default = $self->{default}->{$templ};
 	      }
 	      else {
-		$cache->{$_} = $cache->{$1};
+		$default = merge($self->{default}->{$templ},$self->{default}->{default});
 	      }
+	      foreach $_ (keys(%{$default})) {
+		# set missing definitions
+		if(! defined($cache->{$_}) && defined($default->{$_})){
+		  # special case: copy the definition of another variable
+		  if($default->{$_} =~ m/^<&([A-Z_]+)&>$/) {
+		    if(ref($cache->{$1}) eq 'ARRAY') {
+		      $cache->{$_} = clone($cache->{$1});
+		    }
+		    else {
+		      $cache->{$_} = $cache->{$1};
+		    }
+		  }
+		  else {
+		    $cache->{$_} = $default->{$_};
+		  }
+		}
+	      }
+	      # push the completed definitions
+	      $pupo = $self->_push_varstack($cache);
 	    }
 	    else {
-	      $cache->{$_} = $default->{$_};
+	      # no defaults
+	      $pupo = $self->_push_varstack(shift @{$nconf_back->{$templ}});
 	    }
 	  }
+	  else {
+	    # no definition for this subtemplate, use defaults
+	    if(ref($self->{default}->{$templ}) eq 'HASH') {
+	      $pupo = $self->_push_varstack($self->{default}->{$templ});
+	    }
+	    else {
+	      # no definitions at all
+	      $pupo = 0;
+	    }
+	  }
+	  # set handler
+	  if(! ($handler = $self->{handler}->{$templ})) {
+	    $handler = $self->{handler}->{default}
+	  }
+	  if($self->{confirm}) {
+	    $handler = $self->{confirm_handler}->{$templ} if($self->{confirm_handler}->{$templ});
+	    $res = &$handler($self,($self->{confirm_skin}->{$templ} || $self->{confirm_skin}->{default}),@args);
+	  }
+	  else {
+	    $res = &$handler($self,$templ,@args);
+	  }
+	  $res = '' unless(defined($res));
+	  
+	  $self->{nconf} = $nconf_back;
+	  # pop as many as there were pushed before
+	  $self->_pop_varstack($pupo);
 	}
-	# push the completed definitions
-	$pupo = $self->_push_varstack($cache);
-      }
-      else {
-	# no defaults
-	$pupo = $self->_push_varstack(shift @{$nconf_back->{$templ}});
-      }
-    }
-    else {
-      # no definition for this subtemplate, use defaults
-      if(ref($self->{default}->{$templ}) eq 'HASH') {
-	$pupo = $self->_push_varstack($self->{default}->{$templ});
-      }
-      else {
-	# no definitions at all
-	$pupo = 0;
-      }
-    }
-    
-    # set handler
-    if(! ($handler = $self->{handler}->{$templ})) {
-      $handler = $self->{handler}->{default}
-    }
-    if($self->{confirm}) {
-      $handler = $self->{confirm_handler}->{$templ} if($self->{confirm_handler}->{$templ});
-      $res = &$handler($self,($self->{confirm_skin}->{$templ} || $self->{confirm_skin}->{default}),@args);
-    }
-    else {
-      # the following causes an segfault:
-      # $cont =~ s/<&$templ&>/&$handler($self,$templ)/e;
-      # this works:
-      $res = &$handler($self,$templ,@args);
-      # replace subtemplate with result
-    }
-    $res = '' unless(defined($res));
-    if($args) {
-      while($cont =~ s/^((.*<~.*~>.*)*?|((?!.*<~.*).*?))<&$templ $args&>/$1$res/s){};
-    }
-    else {
-      while($cont =~ s/^((.*<~.*~>.*)*?|((?!.*<~.*).*?))<&$templ&>/$1$res/s){};
-    }
-    
-    $self->{nconf} = $nconf_back;
-    # pop as many as there were pushed before
-    $self->_pop_varstack($pupo);
-  }
-  
-  # parsing <~ ... ~VAR~> loop-blocks  
-  while($cont =~ m/<~((?:(?:(?:(?!<~|~>)..)*.?<~(?:(?!<~|~>)..)*.?~>(?:(?!<~|~>)..)*.?)+)|(?:(?:(?!<~)..)*.?))~([A-Z_ ]+)~>/so) {
-    undef %itvars;
-    $max = 0;
-    # fetch values of block variables, set max
-    foreach $_ (split(' ', $2)) {
-      $itval = $self->_get_var($_);
-      if(ref($itval) eq 'ARRAY' && @{$itval} > 0) {
-	$itvars{$_} = $itval;
-	if(@{$itval} > $max) {
-	  $max = @{$itval};
-	}
-      }
-      elsif(defined($itval)) {
-	$itvars{$_} = $itval;
-	if($max < 1){
-	  $max = 1; 
-	}
-      }
-    }
-    $tmp = '';
-    $body = $1;
-    for($i=0; $i<$max; $i++) {
-      # set block variables to current element
-      foreach $_ (keys(%itvars)) {
-	if(ref($itvars{$_}) eq 'ARRAY') {
-	  $self->_set_var($_, shift @{$itvars{$_}});
-	  # delete a variable which elements are consumed
-	  if(@{$itvars{$_}} eq 0) {
-	    delete $itvars{$_};
+	# parse loops
+	elsif($match =~ m/^(.*)~([A-Z_ ]+)~>$/s) {
+	  undef %itvars;
+	  $max = 0;
+	  # fetch values of block variables, set max
+	  foreach $_ (split(' ', $2)) {
+	    $itval = $self->_get_var($_);
+	    if(ref($itval) eq 'ARRAY' && @{$itval} > 0) {
+	      $itvars{$_} = $itval;
+	      if(@{$itval} > $max) {
+		$max = @{$itval};
+	      }
+	    }
+	    elsif(defined($itval)) {
+	      $itvars{$_} = $itval;
+	      if($max < 1){
+		$max = 1; 
+	      }
+	    }
+	  }
+	  $res = '';
+	  $body = $1;
+	  for($y=0; $y<$max; $y++) {
+	    # set block variables to current element
+	    foreach $_ (keys(%itvars)) {
+	      if(ref($itvars{$_}) eq 'ARRAY') {
+		$self->_set_var($_, shift @{$itvars{$_}});
+		# delete a variable which elements are consumed
+		if(@{$itvars{$_}} eq 0) {
+		  delete $itvars{$_};
+		}
+	      }
+	      # scalars aren't consumed
+	      else {
+		$self->_set_var($_, $itvars{$_});
+	      }
+	    }
+	    # parse and append
+	    $res .= $self->_parse($body);
 	  }
 	}
-	# scalars aren't consumed
-	else {
-	  $self->_set_var($_, $itvars{$_});
+	# parse <! ... ! !> sections
+	elsif($match =~ m/^(.*)\!(?:([A-Z_ ]+)|([A-Z_\|]+))\!>$/s) {
+	  $code = $1;
+	  $tmp = 0;
+	  $res = '';
+	  if(defined($2) and $2 ne '') {
+	    $_ = $2;
+	    foreach $_ (split(' ',$_)) {
+	      $_ = $self->_get_var($_,1);
+	      ++$tmp && last unless($_ or $_ eq '0');
+	    }
+	    $res = $code if(!$tmp);
+	  }
+	  elsif(defined($3) and $3 ne '') {
+	    $_ = $3;
+	    foreach $_ (split('\|',$_)) {
+	      $_ = $self->_get_var($_,1);
+	      ++$tmp && last if($_ or $_ eq '0');
+	    }
+	    $res = $code if($tmp);
+	  }
+	  $res = $self->_parse($res) if($res ne '');
 	}
+	if(defined($res)) {
+	  $cont = substr($cont,0,$c-1) . $res . substr($cont,$i+1);
+	  $i += length($res)-length($match)-2;
+	}
+	$match = '';
+	$c = 0;
       }
-      # parse and append
-      $tmp .= $self->_parse($body);
-    }
-    # replace block with result
-    $cont =~ s//$tmp/e;
-  }
-
-  while($cont =~ m/<\!((?:(?:(?:(?!<\!|\!>)..)*.?<\!(?:(?!<\!|\!>)..)*.?\!>(?:(?!<\!|\!>)..)*.?)+)|(?:(?:(?!<\!)..)*.?))\!(?:([A-Z_ ]+)|([A-Z_\|]+))\!>/s) {
-    my $code = $1;
-    $tmp = 0;
-    if($2 or $2 eq '0') {
-      $_ = $2;
-      foreach $_ (split(' ',$_)) {
-	$_ = $self->_get_var($_,1);
-	++$tmp && $cont =~ s/// && last unless($_ or $_ eq '0');
-      }
-      $cont =~ s//$code/ if(!$tmp);
-    }
-    elsif($3 or $3 eq '0') {
-      $_ = $3;
-      foreach $_ (split('\|',$_)) {
-	$_ = $self->_get_var($_,1);
-	++$tmp && last if($_ or $_ eq '0');
-      }
-      $tmp ? $cont =~ s//$code/ : $cont =~ s///;
     }
   }
-  # replace variables with theire values
-  while($cont =~ m/<&(~)?([A-Z_]+)&>/) {
-    $tmp = $&;
-    $res = $self->_parse($self->_get_var($2,$1));
-    $cont =~ s/$tmp/$res/gs;
-  }
-
-  #while($cont =~ s/<&(~)?([A-Z_]+)&>/$self->_parse($self->_get_var($2,$1))/ges) {
-  #  print STDERR "\nA", $cont, "B\n";
-  #}  
 
   return $cont;
 }
@@ -1508,9 +1509,9 @@ sub _push_varstack {
     if($self->{debug}) {
       foreach $_(keys(%{$add})) {
 	for($i=0; $i<@{$self->{varstack}}; $i++) {
-	  print " ";
+	  print STDERR " ";
 	}
-	print "$_:", $add->{$_}, "\n";
+	print STDERR "$_:", $add->{$_}, "\n";
       }
     }
     push @{$self->{varstack}}, $add;
@@ -1525,7 +1526,7 @@ sub _pop_varstack {
   my $i;
   for($i=0; $i<$howmany; $i++) {
     if($self->{debug}) {
-      print "rm\n";
+      print STDERR "rm\n";
     }
     pop @{$self->{varstack}};
   }
@@ -1538,12 +1539,14 @@ sub _get_value {
   my $res;
   my ($keyvar1, $keyvar2) = split(' ', (shift||'NAME VALUE'));
   my $force = (shift || 0);
+  my $fresh = (shift || 0);
 
   if(! defined($keyvar2)){
     $keyvar2 = 'VALUE';
   }
   if(($self->is_submitted && $self->{use_input}) || $force) {
-    $res = $self->{input_copy}->{$self->_get_var($keyvar1, 1)};
+    $_ = $fresh ? 'input' : 'input_copy';
+    $res = $self->{$_}->{$self->_get_var($keyvar1, 1)};
   }
   else {
     $res = $self->_get_var($keyvar2, 1);

@@ -45,3 +45,13 @@ Till version 0.7 FormEngine was called gaff.
 This is a CPAN release only. I forgot to delete the 'blib' directory before
 packaging the 0.7.3 release. CPAN doesn't like this.
 
+0.7.4
+-----
+	- fixed bug in _handle_error
+	- template parsing is now done from left to right and from top to
+	bottom, independend of wether a variable, a handler call, a loop
+	etc. is found
+	- second argument of _handle_value changed its meaning!
+	- template variables are now valid for all subtemplates too!
+	- enhanced documentation
+	

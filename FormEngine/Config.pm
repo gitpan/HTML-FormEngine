@@ -1,7 +1,5 @@
 package HTML::FormEngine::Config;
 
-use Locale::gettext;
-
 use HTML::FormEngine::Skin;
 use HTML::FormEngine::Handler;
 use HTML::FormEngine::Checks;
@@ -33,9 +31,9 @@ $default{default} = {TITLE => '<&NAME&>', NAME => '<&TITLE&>'};
 # set ACTION to $r->uri when using mod_perl!
 $default{main} = {
 		  SUBMIT => 'Ok', FORMNAME => 'FormEngine', ACTION => $ENV{REQUEST_URI}, METHOD => 'post',
-                  CONFIRMSG => gettext('Are you really sure, that you want to submit the following data?'),
+                  CONFIRMSG => 'Are you really sure, that you want to submit the following data?',
+		  CANCEL => 'Cancel',
 		  CONFIRMED => 'confirmed', CONFIRM_CANCEL => 'confirm_cancel',
-		  CANCEL => gettext('Cancel')
 		 };
 $default{text} = {TYPE => 'text', SIZE => 20};
 $default{radio} = {OPT_VAL => '<&OPTION&>', OPTION => '<&OPT_VAL&>'};
@@ -53,6 +51,7 @@ $handler{confirm_checked_uniq} = \&HTML::FormEngine::Handler::_handle_confirm_ch
 $handler{value} = \&HTML::FormEngine::Handler::_handle_value;
 $handler{error} = \&HTML::FormEngine::Handler::_handle_error;
 $handler{gettext} = \&HTML::FormEngine::Handler::_handle_gettext;
+$handler{gettext_var} = \&HTML::FormEngine::Handler::_handle_gettext_var;
 
 $checks{not_null} = \&HTML::FormEngine::Checks::_check_not_null;
 $checks{email} = \&HTML::FormEngine::Checks::_check_email;

@@ -172,6 +172,9 @@ When using the same fields several times, you must also define
 I<ROWNUM>, this must start with 1 increased by one whenever the field
 names are repeated.
 
+B<Note:> When you defined several tables, you must reference other
+fields with I<tablename.fieldname>!
+
 =cut
 
 ######################################################################
@@ -180,11 +183,13 @@ sub _check_fmatch {
   my($value,$field,$self) = @_;
   my $match = $self->_get_var('fmatch');
   if($match) {
+    $_ = $match;
     my $match = $self->get_input_value($match);
+    print STDERR "no such field: $_" and return '' unless(defined($match));
     if(ref($match) eq 'ARRAY' and $_ = $self->_get_var('ROWNUM',1)) {
       $match = $match->[$_-1];
     }
-    return gettext('doesn\'t match') . '!' if($value ne $match);
+    return gettext('doesn\'t match') . '!' if(defined($value) and $value ne $match);
   }
 }
 
@@ -203,8 +208,9 @@ is returned.
 sub _check_regex {
   my($value,$field,$self) = @_;
   my $regex = $self->_get_var('regex');
+  #print STDERR $regex, " ", $value, "\n";
   if($regex) {
-    return gettext('invalid').'!' unless($value =~ m/$regex/);
+    return gettext('invalid').'!' unless(defined($value) and ($value =~ m/$regex/));
   }
   return '';
 }

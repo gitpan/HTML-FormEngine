@@ -210,9 +210,8 @@ This handler returns the value of the field.
 The first argument defines the value which should be returned if the
 value is empty. By default this is undef.
 
-If the second argument is true (1), the value, which was last returned
-for this field name, will be returned again instead of trying to fetch
-the next value.
+If the second argument is true (1), the returned value, will be
+returned (for this field name) again next time.
 
 The third argument is used to tell the handler the name of the
 variable in which the field name is stored.  By default this is
@@ -235,7 +234,7 @@ sub _handle_value {
       $res =  shift @{$res};
     }
   }
-  return ($res || $res eq '0') ? $res : $none;
+  return (defined($res) and $res || $res eq '0') ? $res : $none;
 }
 
 ######################################################################
@@ -260,18 +259,16 @@ sub _handle_error {
   my ($self,$caller,$keyvar,$namevar) = @_;
   $keyvar = 'ERROR' unless($keyvar);
   $namevar = 'NAME' unless($namevar);
-
-  my $templ = shift;
   if($self->is_submitted && $self->{check_error}) {
     my $check = $self->_get_var($keyvar,1);
-    $check = [ $check ] if(ref($check) ne 'ARRAY');
-    if(@{$check}) {
-      my $value = $self->_get_value($namevar,1);
+    $check = [ $check ] if(ref($check) ne 'ARRAY' and $check ne '');
+    if(ref($check) eq 'ARRAY' and @{$check}) {
+      my $value = $self->_get_value($namevar,1,1);
       my $name = $self->_get_var($namevar,1);
       if(ref($value) eq 'ARRAY') {
-	if (ref($self->{_handle_error}) ne 'ARRAY') {
+	if (ref($self->{_handle_error}) ne 'HASH') {
 	  $self->{_handle_error} = {};
-	  push @{$self->{do_before_make}}, sub { my($self) = @_; $self->{_handle_error} = {}; };
+	  push @{$self->{call_before_make}}, sub { my($self) = @_; $self->{_handle_error} = {}; };
 	}
 	$value = $value->[$self->{_handle_error}->{$name}++ || 0];
       }
@@ -315,6 +312,20 @@ sub _handle_gettext {
     push @res, gettext($_);
   }
   return join(' ', @res);
+}
+
+sub _handle_gettext_var {
+  my ($self,$caller) =  (shift,shift);
+  my @res;
+  foreach $_ (@_) {
+    #print STDERR "'", $_, "'\n";
+    $_ = $self->_get_var($_);
+    #print STDERR "'", $_, "'\n";
+    push @res, gettext($_) if($_ or $_ eq '0');
+    #print STDERR "'", $res[@res-1], "'T\n";
+  }
+  return join(' ', @res);
+  #return 'test';
 }
 
 ######################################################################

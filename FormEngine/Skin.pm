@@ -5,6 +5,8 @@ HTML::FormEngine::Skin - FormEngines default skin
 
 =head1 THE TEMPLATE SYSTEM
 
+The parsing of the templates is done from left to right and from top to bottom!
+
 =head2 Variables
 
 Variables must have the following format:
@@ -14,6 +16,8 @@ Variables must have the following format:
 When the template is processed these directives are replaced
 by the variables value. If no value was defined, the default value is used, if
 even this is missing, they're just removed.
+
+Variables, defined for a certain template, are valid for all subtemplates too!
 
 =head2 Handler calls
 
@@ -35,8 +39,7 @@ to nest templates, you might use the templates name as a handler name
 and so call the default handler which will return the processed template
 code.
 
-For more information about handlers, see the pod 
-documentation of Handler.pm.
+For more information about handlers, see the pod of Handler.pm.
 
 =head2 Loops
 
@@ -57,9 +60,9 @@ text fields on the same line.
 
 =head2 <! !> Blocks
 
-Code that is enclosed in '<! ... ! VARIABLENAMES !>' is only printed
+Code that is enclosed in '<! ... ! VARIABLENAMES !>', is only printed
 when all variables which are mentioned in VARIABLENAMES are defined
-(not empty). If you seperate the variable names by '|' instead of ' ',
+(that means not empty). If you seperate the variable names by '|' instead of ' ',
 only one of these variables must be defined.
 
 =cut
@@ -83,13 +86,13 @@ $skin{main} = '
 
 $skin{confirm} = '
 <form action="<&ACTION&>" method="<&METHOD&>">
-<&CONFIRMSG&><br><br>
+<&gettext_var CONFIRMSG&><br><br>
 <input type="hidden" name="<&FORMNAME&>" value="1" />
 <table border=0 align="center" summary=""><~
 <tr><&TEMPL&></tr>~TEMPL~>
 <tr>
    <td align="left">
-     <input type="submit" name="<&CONFIRM_CANCEL&>" value="<&CANCEL&>">
+     <input type="submit" name="<&CONFIRM_CANCEL&>" value="<&gettext_var CANCEL&>">
    </td>
    <td align="right" colspan=2>
       <input type="submit" value="<&SUBMIT&>" name="<&CONFIRMED&>" />
@@ -226,7 +229,7 @@ $skin{default_confirm} = '
    <td>
      <table border=0><~
        <tr><~
-         <td><&value -&><input type="hidden" name="<&NAME&>" value="<&value ,1&>" /></td>~NAME VALUE~>
+         <td><&value -,1&><input type="hidden" name="<&NAME&>" value="<&value&>" /></td>~NAME VALUE~>
        </tr>~NAME VALUE~>
      </table>
    </td>
