@@ -11,7 +11,7 @@ my $msg = '';
 my @form = (
 	{
 	  templ => 'check',
-	  NAME  => [['hobbies[1]','hobbies[2]'],['hobbies[3]','hobbies[4]'],['hobbies[5]','hobbies[6]'],'hobbies[7]','hobbies[8]'],
+	  NAME  => [['hobbies1','hobbies2'],['hobbies3','hobbies4'],['hobbies5','hobbies6'],'hobbies7','hobbies8'],
 	  TITLE => 'hobbies',
 	  OPTION => [['Parachute Jumping', 'Playing Video Games'], ['Doing Nothing', 'Soak'], ['Head Banging', 'Cat Hunting'], "Don't Know", '<&emb_text&>'],
 	  OPT_VAL => [[1,2], [3,4], [5,6], 7, 8],

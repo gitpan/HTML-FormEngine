@@ -1,11 +1,11 @@
-FormEngine version 0.7.2
+FormEngine version 0.7.3
 ==========================
 
 FormEngine is a extensible perl module for managing html/xhtml forms. You
 can create, validate and control forms with FormEngine. The api is designed
 to make the job easy when only simple forms are needed, but it also supports 
 very complex tasks. You don't need any knowledge about html,
-but if you have, you can suit the form design very easy.
+but if you have, you can suit the form design easily.
 FormEngine is known to work with CGI.pm and mod_perl, all it needs is a
 reference to an hash with the GET or POST data.
 Please see the POD for additional information.

@@ -19,7 +19,7 @@ Till version 0.7 FormEngine was called gaff.
 	- enhanced documentation
 	
 0.7.2
--------
+-----
 
 	- added 2 easy tests (make test)
 	- fixed bug in _handle_error (Handler.pm)
@@ -28,3 +28,14 @@ Till version 0.7 FormEngine was called gaff.
 	- implemented multi skin management
 	- enhanced documentation
 
+0.7.3
+-----
+	- fixed bug in _check_email (Checks.pm)
+	- added 'print' template
+	- added 'check_uniq' template
+	- added 'button' template
+	- added 'confirm' method
+	- implemented '<!.*![A-Za-z_ |]+!>' template syntax
+	- added new check methods
+	- enhanced handler system
+        - enhanced documentation

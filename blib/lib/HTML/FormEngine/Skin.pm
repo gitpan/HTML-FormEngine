@@ -55,13 +55,6 @@ You can nest loops. For example the I<text> template uses this feature: If you u
 the text fields are printed each on a single line, if you use two dimensional arrays, you can print several
 text fields on the same line.
 
-=head2 <! !> Blocks
-
-Code that is enclosed in '<! ... ! VARIABLENAMES !>' is only printed
-when all variables which are mentioned in VARIABLENAMES are defined
-(not empty). If you seperate the variable names by '|' instead of ' ',
-only one of these variables must be defined.
-
 =cut
 
 ######################################################################
