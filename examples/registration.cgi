@@ -17,6 +17,10 @@ my @form = (
 	      OPTION => ['mr.','mrs.'],
 	    },
 	    {
+	      templ => 'hidden',
+	      VALUE => 'test',
+	    },
+	    {
 	     SIZE => 10,
 	     MAXLEN => 20,
 	     SUBTITLE => [['', '&nbsp;/&nbsp;']],

@@ -10,6 +10,10 @@ HTML::FormEngine::Handler - FormEngine template handler
 
 package HTML::FormEngine::Handler;
 
+use Locale::gettext;
+
+#textdomain('HTML-FormEngine-DBSQL');
+
 ######################################################################
 
 =head2 default
@@ -83,6 +87,8 @@ sub _handle_checked {
     my $option = $self->_get_var($keyvar3, 1);
     if(ref($self->{_handle_checked}) ne 'HASH') {
       $self->{_handle_checked} = {};
+      # this hash must be cleaned before remake!!
+      push @{$self->{call_before_make}}, sub { my ($self) = @_; $self->{_handle_checked} = {}; };
     }
     if(ref($self->{_handle_checked}->{$name}) ne 'HASH') {
       $self->{_handle_checked}->{$name} = {};
@@ -173,6 +179,13 @@ sub _handle_error {
     if(@{$check}) {
       my $value = $self->_get_value($namevar,1);
       my $name = $self->_get_var($namevar,1);
+      if(ref($value) eq 'ARRAY') {
+	if (ref($self->{_handle_error}) ne 'ARRAY') {
+	  $self->{_handle_error} = {};
+	  push @{$self->{do_before_make}}, sub { my($self) = @_; $self->{_handle_error} = {}; };
+	}
+	$value = $value->[$self->{_handle_error}->{$name}++ || 0];
+      }
       my ($chk,$errmsg);
       foreach $chk (@{$check}) {
 	if(ref($chk) ne 'CODE' && ref($self->{checks}->{$chk}) eq 'CODE') {
@@ -188,6 +201,19 @@ sub _handle_error {
     }
   }
   return '';
+}
+
+sub _handle_gettext {
+  my($self, $txt) =  @_;
+  my @res;
+  foreach $_ (split(' ', $txt)) {
+    #if(m/^&[A-Z_]+&$/) {
+    #  $_ = $self->_get_var($1);
+    #}
+    s/_/ /g;
+    push @res, gettext($_);
+  }
+  return join(' ', @res);
 }
 
 ######################################################################

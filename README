@@ -1,5 +1,5 @@
-FormEngine version 0.7.1
-========================
+FormEngine version 0.7.2
+==========================
 
 FormEngine is a extensible perl module for managing html/xhtml forms. You
 can create, validate and control forms with FormEngine. The api is designed
@@ -15,6 +15,7 @@ INSTALLATION
 To install this module, type:
 	perl Makefile.PL
 	make
+	make test
 	make install
 
 If you need gettext support, copy the content of the locale directory
@@ -33,4 +34,4 @@ COPYRIGHT AND LICENCE
 (c) 2003 Moritz Sinn
 
 This module is free software.  You can redistribute it and/or modify it 
-under the same terms of the GNU GENERAL PUBLIC LICENSE (see COPYING).
+under the terms of the GNU GENERAL PUBLIC LICENSE (see COPYING).

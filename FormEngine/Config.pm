@@ -6,7 +6,9 @@ use HTML::FormEngine::Checks;
 
 $textdomain = "/usr/share/locale";
 
-%skin = %HTML::FormEngine::Skin::skin;
+$skin{FormEngine} = \%HTML::FormEngine::Skin::skin;
+
+$default_skin = 'FormEngine';
 
 $default{default} = {TITLE => '<&NAME&>', NAME => '<&TITLE&>'};
 # set ACTION to $r->uri when using mod_perl!
@@ -22,6 +24,7 @@ $handler{default} = \&HTML::FormEngine::Handler::_handle_default;
 $handler{checked} = \&HTML::FormEngine::Handler::_handle_checked;
 $handler{value} = \&HTML::FormEngine::Handler::_handle_value;
 $handler{error} = \&HTML::FormEngine::Handler::_handle_error;
+$handler{gettext} = \&HTML::FormEngine::Handler::_handle_gettext;
 
 $checks{not_null} = \&HTML::FormEngine::Checks::_check_not_null;
 $checks{email} = \&HTML::FormEngine::Checks::_check_email;

@@ -4,10 +4,10 @@ msgid  "invalid"
 msgstr "ungültig"
 
 msgid  "value missing"
-msgstr "wert fehlt"
+msgstr "Wert fehlt"
 
 msgid  "failure"
-msgstr "fehler"
+msgstr "Fehler"
 
 msgid  "Yes"
 msgstr "Ja"

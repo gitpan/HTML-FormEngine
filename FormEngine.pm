@@ -1,4 +1,4 @@
-=head1 NAME
+=head1 NAME 
 
 HTML::FormEngine - create,validate and control html/xhtml forms
 
@@ -15,7 +15,7 @@ require 5.004;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.7.1';
+$VERSION = '0.7.2';
 
 ######################################################################
 
@@ -593,8 +593,12 @@ sub make {
   # this initialises the complex parsing process
   # all configuration must be done before calling make
   my $self = shift;
+  $self->{input_copy} = clone($self->{input});
   $self->{nconf} = {'main' => [clone($self->{conf})]};
   $self->{varstack} = [];
+  foreach $_ (@{$self->{call_before_make}}) {
+    &$_($self) if(ref($_) eq 'CODE');
+  }
   $self->{cont} = $self->_parse('<&main&>');
 }
 
@@ -610,6 +614,8 @@ Sends the html/xhtml output directly to STDOUT. C<make> must be called first!
 
 sub print {
   my $self = shift;
+  $self->make if($self->{call_make});
+  $self->{call_make} = 0;
   print $self->{cont}, "\n";
 }
 
@@ -625,6 +631,8 @@ Returns the html/xhtml form code in a string. C<make> must be called first!
 
 sub get {
   my $self = shift;
+  $self->make if($self->{call_make});
+  $self->{call_make} = 0;
   return $self->{cont};
 }
 
@@ -694,7 +702,7 @@ sub get_input {
   my $self = shift;
   my $fname = shift;
   if($fname) {
-    return $self->{input}->{$fname};
+    return clone($self->{input}->{$fname});
   }
 }
 
@@ -707,18 +715,24 @@ sub get_input_value {
 
 =head2 Methods For Configuring FormEngine
 
-=head3 set_skin ( HASHREF )
+=head3 set_skin ( NAME )
 
 If you want to use an alternate skin, call this method.
-You have to pass a reference to the skin hash.
+You have to pass the name of an registered skin (see Config.pm).
 
 =cut
 
 ######################################################################
 
 sub set_skin {
-  my $self = shift;
-  $self->{skin} = shift; #hashref
+  my ($self,$skin) = @_;
+  ##$self->{skin} = $skin && return 1 if(ref($skin) eq 'HASH');
+  if($self->{skins_av}->{$skin}) {
+    $self->{skin} = $self->{skins_av}->{$skin};
+    $self->{current_skin} = $skin;
+    return 1 ;
+  }
+  return 0;
 }
 
 ######################################################################
@@ -772,9 +786,9 @@ sub add_default {
   my $self = shift;
   my $add = shift; #hashref
   $self->{default} = merge($add, $self->{default});
-  foreach $_ (keys(%{$self->{default}})) {
-    print $_, " ", $self->{default}->{$_}, "<br>";
-  }
+  #foreach $_ (keys(%{$self->{default}})) {
+  #  print $_, " ", $self->{default}->{$_}, "<br>";
+  #}
 }
 
 ######################################################################
@@ -890,15 +904,25 @@ is just a copy.
 ######################################################################
 
 sub get_conf {
-  my $self = shift;
+  my ($self, $field) = @_;
+  if($field) {
+    foreach $_ (keys(%{$self->{conf}->{sub}})) {
+      foreach $_ (@{$self->{conf}->{sub}->{$_}}) {
+	if($_->{'TITLE'} eq $field) {
+	  return clone($_);
+	}
+      }
+    }
+    return {};
+  }
   return clone($self->{conf});
 }
 
 ######################################################################
 
-=head3 print_conf
+=head3 print_conf ( HASHREF )
 
-Prints the current form configuration to STDOUT.
+Prints the given form configuration to STDOUT.
 
 =cut
 
@@ -910,22 +934,22 @@ sub print_conf {
   my $i = shift || 0;
   my $y = 0;
   if(ref($conf) eq 'ARRAY') {
+    print "ARRAY<br>\n";
     foreach $_ (@{$conf}) {
-      for($y=0; $y<$i; $y++) { print " "; }
-      print "ARRAY\n";
+      for($y=0; $y<$i; $y++) { print "&nbsp;"; }
       $self->print_conf($_, $i+1);
     }
   }
   elsif(ref($conf) eq 'HASH') {
     foreach $_ (keys(%{$conf})) {
-      for($y=0; $y<$i; $y++) { print " "; }
-      print $_, "\n";
+      for($y=0; $y<$i; $y++) { print "&nbsp;"; }
+      print $_, "<br>\n";
       $self->print_conf($conf->{$_}, $i+1);
     }
   }
   else {
-    for($y=0; $y<$i; $y++) { print " "; } 
-    print $conf, "\n";
+    for($y=0; $y<$i; $y++) { print "&nbsp;"; } 
+    print $conf, "<br>\n";
   }
 }
 ######################################################################
@@ -936,11 +960,11 @@ sub print_conf {
 
 There are two ways how you can nest templates. The first one
 is to put a handler call in the template definition. This is a less flexible
-solution, but it might be very usefull. See the pod documentation of Skin.pm
+solution, but it might be very usefull. See the POD of Skin.pm
 for more information.
 
 The second and flexible way is, to assign a handler call to a template variable
-(see the pod documentation of Skin.pm for more information about handler calls).
+(see the POD of Skin.pm for more information about handler calls).
 A good example for this way is hobbies.cgi. There you have a option called I<other>
 and an input field to put in the name of this alternative hobby. When you look at
 the form definition below, you see that the value of the I<OPTION> variable of this option
@@ -983,29 +1007,32 @@ sub _initialize {
 
   Hash::Merge::set_behavior('LEFT_PRECEDENT');
 
-  $self->{input_copy} = {};
+  $self->{input} = {};
   if(ref($input) eq 'HASH') {
     foreach (keys(%{$input})) {
       if(defined($input->{$_}) && !ref($input->{$_}) && $input->{$_} =~ m/\0/o) {
-	$self->{input_copy}->{$_} = [];
-	@{$self->{input_copy}->{$_}} = split("\0", $input->{$_});
+	$self->{input}->{$_} = [];
+	@{$self->{input}->{$_}} = split("\0", $input->{$_});
       } else {
-	$self->{input_copy}->{$_} = $input->{$_};
+	$self->{input}->{$_} = $input->{$_};
       }
     }
   }
-  $self->{input} = clone($self->{input_copy});
+  #$self->{input} = clone($self->{input_copy});
   $self->{errcount} = 0;
   $self->{use_input} = 1;
   $self->{check_error} = 1;
   $self->{cont} = '';
+  $self->{call_make} = 0;
+  $self->{call_before_make} = [];
 
   # setting up the default skin
   # use:
   #  set_skin | add_skin | set_default | add_default | set_handler | add_handler
   # to fit it to your needs or edit Config.pm
 
-  $self->{skin} = \%HTML::FormEngine::Config::skin;
+  $self->{skins_av} = \%HTML::FormEngine::Config::skin;
+  $self->set_skin($HTML::FormEngine::Config::default_skin);
   $self->{default} = \%HTML::FormEngine::Config::default;
   $self->{handler} = \%HTML::FormEngine::Config::handler;
   $self->{checks} = \%HTML::FormEngine::Config::checks;
@@ -1107,7 +1134,7 @@ sub _parse {
   my ($cache,$default);
 
   # parsing handler calls, we mustn't touch <~ ~> blocks
-  while($cont =~ m/^(?:(?:.*<~.*~>.*)*|(?:(?!.*<~.*).*))<&([a-z_]+)(?: ((?:(?!<&|&>)..)*.?))?&>/so) {
+  while($cont =~ m/^(?:(?:.*<~.*~>.*)*|(?:(?!.*<~.*).*))<&([a-z_]+)(?: (.*?))?&>/s) {
   ##while($cont =~ m/^(?=.*<~.*~>.*).*|(?!.*<~.*).*<&([a-z_]+)(?: ((?:(?!<&|&>)..)*.?))?&>/s) {
     $templ = $1;
     $args = $2;
@@ -1320,6 +1347,16 @@ sub _get_value {
   }
 }
 
+sub _add_to_output {
+  my($self,$templ,$def) = @_;
+  if($templ && ref($def) eq 'HASH') {
+    push @{$self->{conf}->{TEMPL}}, '<&' . $templ . '&>';
+    $self->{conf}->{sub}->{$templ} = [] unless (ref($self->{conf}->{sub}->{$templ}) eq 'ARRAY');
+    push @{$self->{conf}->{sub}->{$templ}}, $def;
+    $self->{call_make} = 1 if($self->{cont});
+  }
+}
+
 ######################################################################
 
 return 1;
@@ -1330,7 +1367,7 @@ __END__
 =head2 Modify A Skin
 
 To modify the current skin, use the method C<add_skin> (see above). You should
-have a look at Skin.pm and read its pod documentation.
+have a look at Skin.pm and read its POD.
 
 =head2 Write A New Skin
 
@@ -1341,12 +1378,12 @@ Please send me your skins.
 
 =head2 Write A Handler
 
-Look at the pod documentation of Handler.pm. You can use C<add_handler> to 
+Look at the POD of Handler.pm. You can use C<add_handler> to 
 add your handler temporary, edit Config.pm to make it persistent.
 
 =head2 Write A Check Routine
 
-The design of a check routine is explained in the pod documentation of Checks.pm.
+The design of a check routine is explained in the POD of Checks.pm.
 You can easily refer to it by reference or even define it in line as an anonymous function (see
 the ERROR template variable).
 If your new written routine is of general usage, you should make it part of FormEngine by placing
@@ -1360,15 +1397,15 @@ Have a look at ...
 
 =item
 
-the pod documentation of Skin.pm for information about FormEngines template system.
+the POD of Skin.pm for information about FormEngines template system.
 
 =item
 
-the pod documentation of Handler.pm for information about FormEngines handler architecture.
+the POD of Handler.pm for information about FormEngines handler architecture.
 
 =item
 
-the pod documentation of Checks.pm for information about FormEngines check methods.
+the POD of Checks.pm for information about FormEngines check methods.
 
 =item
 
@@ -1384,8 +1421,7 @@ Thanks!
 
 =head1 AUTHOR
 
-(c) 2003, Moritz Sinn. This module is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License (see http://www.gnu.org/licenses/gpl.txt) as published by
-    the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+(c) 2003, Moritz Sinn. This module is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License (see http://www.gnu.org/licenses/gpl.txt) as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
     This module is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -1395,3 +1431,7 @@ Thanks!
 I am always interested in knowing how my work helps others, so if you put this module to use in any of your own code then please send me the URL. Also, if you make modifications to the module because it doesn't work the way you need, please send me a copy so that I can roll desirable changes into the main release.
 
 Address comments, suggestions, and bug reports to moritz@freesources.org. 
+
+=head1 SEE ALSO
+
+HTML::FormTemplate by Darren Duncan

@@ -140,7 +140,9 @@ $skin{textarea} = '
 ';
 
 $skin{hidden} = '
-   <~<input type="hidden" name=<&NAME&> value="<&value&>" />~NAME~>
+   <td colspan=3><~
+     <input type="hidden" name="<&NAME&>" value="<&value&>" />~NAME~>
+   </td>
 ';
 
 $skin{emb_text} = '

@@ -17,4 +17,14 @@ Till version 0.7 FormEngine was called gaff.
 	
 	- new method add_checks
 	- enhanced documentation
+	
+0.7.2
+-------
+
+	- added 2 easy tests (make test)
+	- fixed bug in _handle_error (Handler.pm)
+	- fixed bug in _parse (FormEngine.pm)
+	- added _add_to_output method
+	- implemented multi skin management
+	- enhanced documentation
 

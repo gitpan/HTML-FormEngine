@@ -115,6 +115,7 @@ the dates existence.
 
 sub _check_date {
   my $value = shift;
+  return '' unless($value);
   my ($d, $m, $y);
   my $msg = gettext('invalid').'!';
 
@@ -142,7 +143,9 @@ sub _check_date {
 }
 
 sub _check_digitonly {
-  return gettext('invalid').'!' if(! shift =~ m/^[0-9]*$/);
+  $_ = shift;
+  return gettext('invalid').'!' unless(m/^[0-9]*$/);
+  return 0;
 }
 
 ######################################################################
