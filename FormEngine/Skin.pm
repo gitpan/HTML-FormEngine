@@ -580,7 +580,7 @@ sub _init {
   $self->{hidden} = $self->_get_hidden;
 
   $self->{check} = $self->_get_check;
-  $self->{text_skin} = $self->_get_text_skin;
+  ##$self->{text_skin} = $self->_get_text_skin;
   $self->{confirm_skin} = $self->_get_confirm_skin;
 
   $self->{not_null_string} = $self->_get_not_null_string;
@@ -751,10 +751,10 @@ sub _get_confirm_skin() {
   #return undef;
 }
 
-sub _get_text_skin() {
-  require HTML::FormEngine::SkinText;
-  return new HTML::FormEngine::SkinText;
-}
+#sub _get_text_skin() {
+#  require HTML::FormEngine::SkinText;
+#  return new HTML::FormEngine::SkinText;
+#}
 
 sub _get_not_null_string() {
   return ''; #*

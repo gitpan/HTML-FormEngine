@@ -109,4 +109,8 @@ packaging the 0.7.3 release. CPAN doesn't like this.
 	- new checks:
 	     - match
 	     - unique
+
+1.01
+-----
+	- fixed bug in Skin.pm (it was askin for HTML::FormEngine::SkinText which is not available and also not needed)
 	
